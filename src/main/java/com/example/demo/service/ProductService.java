@@ -1,14 +1,18 @@
 package com.example.demo.service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import com.example.demo.entitiy.Category;
 import com.example.demo.entitiy.Product;
 import com.example.demo.dto.ProductRequestDto;
+import com.example.demo.dto.ProductResponseDto;
 import com.example.demo.dto.ProductMapper;
 import com.example.demo.repos.CategoryRepostory;
 import com.example.demo.repos.ProductRepostory;
-import java.util.List;
 
 @Service
 public class ProductService {
@@ -19,8 +23,12 @@ public class ProductService {
     @Autowired
     private CategoryRepostory categoryRepository;
 
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
+    // Artık List<Product> değil, List<ProductResponseDto> döndürüyor
+    public List<ProductResponseDto> getAllProducts() {
+        return productRepository.findAll()
+                .stream()
+                .map(ProductMapper::toResponseDto)
+                .collect(Collectors.toList());
     }
 
     public Product getProductById(Long id) {
@@ -28,12 +36,18 @@ public class ProductService {
                 .orElseThrow(() -> new RuntimeException("Ürün bulunamadı: " + id));
     }
 
-    public List<Product> getProductsByCategory(Long categoryId) {
-        return productRepository.findByCategoryId(categoryId);
+    public List<ProductResponseDto> getProductsByCategory(Long categoryId) {
+        return productRepository.findByCategoryId(categoryId)
+                .stream()
+                .map(ProductMapper::toResponseDto)
+                .collect(Collectors.toList());
     }
 
-    public List<Product> searchProducts(String keyword) {
-        return productRepository.findByNameContainingIgnoreCase(keyword);
+    public List<ProductResponseDto> searchProducts(String keyword) {
+        return productRepository.findByNameContainingIgnoreCase(keyword)
+                .stream()
+                .map(ProductMapper::toResponseDto)
+                .collect(Collectors.toList());
     }
 
     // DTO kullanan yeni create metodu
@@ -41,11 +55,7 @@ public class ProductService {
         Category category = categoryRepository.findById(dto.getCategoryId())
                 .orElseThrow(() -> new RuntimeException("Kategori bulunamadı: " + dto.getCategoryId()));
 
-        // Mapper, DTO'daki düz alanları (name, image, stock, price, discount, status) Product'a çeviriyor
         Product product = ProductMapper.toEntity(dto);
-
-        // Mapper category'yi set etmiyordu (hatırlarsan bilerek öyle bırakmıştık)
-        // çünkü Category'yi bulmak veritabanı sorgusu gerektiriyor, mapper'ın işi değil
         product.setCategory(category);
 
         return productRepository.save(product);

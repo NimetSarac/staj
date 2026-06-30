@@ -4,8 +4,10 @@ import java.util.List;
 
 import org.springframework.web.bind.annotation.*;
 
-import com.example.demo.dto.ProductRequestDto;
 import com.example.demo.entitiy.Product;
+import com.example.demo.dto.ProductRequestDto;
+import com.example.demo.dto.ProductResponseDto;
+import com.example.demo.dto.ProductMapper;
 import com.example.demo.service.ProductService;
 
 @RestController
@@ -19,33 +21,36 @@ public class ProductController {
     }
 
     @GetMapping
-    public List<Product> getAll() {
+    public List<ProductResponseDto> getAll() {
         return productService.getAllProducts();
     }
 
     @GetMapping("/{id}")
-    public Product getById(@PathVariable Long id) {
-        return productService.getProductById(id);
+    public ProductResponseDto getById(@PathVariable Long id) {
+        Product product = productService.getProductById(id);
+        return ProductMapper.toResponseDto(product);
     }
 
     @GetMapping("/category/{categoryId}")
-    public List<Product> getByCategory(@PathVariable Long categoryId) {
+    public List<ProductResponseDto> getByCategory(@PathVariable Long categoryId) {
         return productService.getProductsByCategory(categoryId);
     }
 
     @GetMapping("/search")
-    public List<Product> search(@RequestParam String keyword) {
+    public List<ProductResponseDto> search(@RequestParam String keyword) {
         return productService.searchProducts(keyword);
     }
 
-    // Admin: yeni ürün oluşturma - categoryId query param olarak değil
     @PostMapping
-    public Product create(@RequestBody ProductRequestDto dto) {
-        return productService.create(dto);
+    public ProductResponseDto create(@RequestBody ProductRequestDto dto) {
+        Product saved = productService.create(dto);
+        return ProductMapper.toResponseDto(saved);
     }
+
     @PutMapping("/{id}")
-    public Product update(@PathVariable Long id, @RequestBody Product updatedProduct) {
-        return productService.updateProduct(id, updatedProduct);
+    public ProductResponseDto update(@PathVariable Long id, @RequestBody Product updatedProduct) {
+        Product updated = productService.updateProduct(id, updatedProduct);
+        return ProductMapper.toResponseDto(updated);
     }
 
     @DeleteMapping("/{id}")
