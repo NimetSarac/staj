@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,17 +32,21 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Users>> login(@RequestParam String username,
                                                      @RequestParam String password,
                                                      HttpServletRequest request) {
-        Users user = userService.login(username, password);
+        try {
+            Users user = userService.login(username, password);
 
+            HttpSession session = request.getSession();
+            session.setAttribute("userId", user.getId());
+            session.setAttribute("role", user.getRole());
 
-        // Giriş başarılı oldu, session'a kullanıcı bilgilerini yaz
-        HttpSession session = request.getSession();
-        session.setAttribute("userId", user.getId());
-        session.setAttribute("role", user.getRole());
+            return ResponseEntity.ok(ApiResponse.success("Giriş başarılı", user));
 
-        return ResponseEntity.ok(ApiResponse.success("Giriş başarılı", user));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("Kullanıcı adı veya şifre hatalı.", null));
+        }
     }
-
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(HttpServletRequest request) {
         HttpSession session = request.getSession(false);//session yoksa yeni oluştur
