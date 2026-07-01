@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.entitiy.Category;
+import com.example.demo.exception.InvalidRequestException;
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.repos.CategoryRepostory;
 
 import java.util.List;
@@ -18,17 +20,20 @@ public class CategoryService {
 		return categoryRepository.findAll();
 	}
 
-	public Category getCategoryById(Long id) {
-		return categoryRepository.findById(id).orElseThrow(() -> new RuntimeException("Kategori bulunamadı: " + id));
+	public Category createCategory(Category category) {
+	    if (categoryRepository.existsByName(category.getName())) {
+	        throw new InvalidRequestException("Bu kategori zaten mevcut: " + category.getName());
+	   
+	    }
+	    return categoryRepository.save(category);
 	}
 
-	public Category createCategory(Category category) {
-		if (categoryRepository.existsByName(category.getName())) {
-			throw new RuntimeException("Bu kategori zaten mevcut");
-		}
-		Category add = new Category();
-		add.setName(category.getName());
-		return categoryRepository.save(category);
+	public Category getCategoryById(Long id) {
+	    return categoryRepository.findById(id)
+	            .orElseThrow(() -> new ResourceNotFoundException("Kategori bulunamadı: " + id));
+		//Category add = new Category();
+		//add.setName(category.getName());
+		//return categoryRepository.save(category);
 	}
 
 	public Category updateCategory(Long id, Category updatedData) {

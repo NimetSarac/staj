@@ -3,8 +3,10 @@ package com.example.demo.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.demo.dto.ApiResponse;
 import com.example.demo.entitiy.Users;
 import com.example.demo.service.UserService;
 
@@ -19,45 +21,47 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public Users register(@RequestParam String username,
-                           @RequestParam String email,
-                           @RequestParam String password) {
-        return userService.register(username, email, password);
+    public ResponseEntity<ApiResponse<Users>> register(@RequestParam String username,
+                                                        @RequestParam String email,
+                                                        @RequestParam String password) {
+        Users user = userService.register(username, email, password);
+        return ResponseEntity.ok(ApiResponse.success("Kayıt başarılı", user));
     }
-
     @PostMapping("/login")
-    public Users login(@RequestParam String username,
-                        @RequestParam String password,
-                        HttpServletRequest request) {
-
+    public ResponseEntity<ApiResponse<Users>> login(@RequestParam String username,
+                                                     @RequestParam String password,
+                                                     HttpServletRequest request) {
         Users user = userService.login(username, password);
+
 
         // Giriş başarılı oldu, session'a kullanıcı bilgilerini yaz
         HttpSession session = request.getSession();
         session.setAttribute("userId", user.getId());
         session.setAttribute("role", user.getRole());
 
-        return user;
+        return ResponseEntity.ok(ApiResponse.success("Giriş başarılı", user));
     }
 
     @PostMapping("/logout")
-    public void logout(HttpServletRequest request) {
-        HttpSession session = request.getSession(false); // session yoksa yeni oluşturma
+    public ResponseEntity<ApiResponse<Void>> logout(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);//session yoksa yeni oluştur
         if (session != null) {
-            session.invalidate(); // session'ı tamamen geçersiz kıl
+            session.invalidate(); //session tamamen geçersil kıl
         }
-    }
+        return ResponseEntity.ok(ApiResponse.success("Çıkış başarılı", null));
+    }    
 
     // Frontend'in "şu an giriş yapmış kullanıcı kim?" diye sorabilmesi için
     @GetMapping("/me")
-    public Object getCurrentUser(HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<Object>> getCurrentUser(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
 
         if (session == null || session.getAttribute("userId") == null) {
-            return null; // giriş yapılmamış
+            return ResponseEntity.ok(ApiResponse.error("Giriş yapılmamış", null));
         }
-
         Long userId = (Long) session.getAttribute("userId");
-        return userService.findById(userId);
+        Users user = userService.findById(userId);
+        return ResponseEntity.ok(ApiResponse.success("Kullanıcı bilgisi", user));
     }
+
 }

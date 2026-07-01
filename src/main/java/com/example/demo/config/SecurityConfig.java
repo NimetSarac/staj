@@ -5,8 +5,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -23,10 +25,19 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    // Bu bean, Spring'in kendi InMemoryUserDetailsManager'ını otomatik
+    // oluşturmasını engelliyor — "generated password" mesajını susturuyor
+    @Bean
+    public UserDetailsService userDetailsService() {// userDetailsService() metodu — boş bir InMemoryUserDetailsManager döndürüyor.
+    												//Bu, Spring'e "ben zaten bir UserDetailsService tanımladım, sen üretme" diyor, 
+    												//yani "generated password" mesajı bir daha çıkmayacak.
+        return new InMemoryUserDetailsManager(); // boş, hiç kullanıcı yok
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())   // <-- BU SATIR KESİNLİKLE OLMALI
+            .csrf(csrf -> csrf.disable())
 
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 

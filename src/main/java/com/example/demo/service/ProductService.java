@@ -23,7 +23,7 @@ public class ProductService {
     @Autowired
     private CategoryRepostory categoryRepository;
 
-    // Artık List<Product> değil, List<ProductResponseDto> döndürüyor
+
     public List<ProductResponseDto> getAllProducts() {
         return productRepository.findAll()
                 .stream()
