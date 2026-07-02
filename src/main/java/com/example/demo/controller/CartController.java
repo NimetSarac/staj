@@ -1,8 +1,10 @@
 package com.example.demo.controller;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.example.demo.entitiy.Cart;
+import com.example.demo.dto.ApiResponse;
+import com.example.demo.dto.CartResponseDto;
 import com.example.demo.service.CartService;
 
 @RestController
@@ -16,36 +18,43 @@ public class CartController {
     }
 
     @GetMapping("/{userId}")
-    public Cart getCart(@PathVariable Long userId) {
-        return cartService.getCartByUserId(userId);
+    public ResponseEntity<ApiResponse<CartResponseDto>> getCart(@PathVariable Long userId) {
+        CartResponseDto cart = cartService.getCartByUserId(userId);
+        return ResponseEntity.ok(ApiResponse.success("Sepet getirildi", cart));
     }
 
     @PostMapping("/{userId}/items")
-    public Cart addItem(@PathVariable Long userId,
-                         @RequestParam Long productId,
-                         @RequestParam Integer quantity) {
-        return cartService.addItemToCart(userId, productId, quantity);
+    public ResponseEntity<ApiResponse<CartResponseDto>> addItem(@PathVariable Long userId,
+                                                                 @RequestParam Long productId,
+                                                                 @RequestParam Integer quantity) {
+        CartResponseDto cart = cartService.addItemToCart(userId, productId, quantity);
+        return ResponseEntity.ok(ApiResponse.success("Ürün sepete eklendi", cart));
     }
 
     @PutMapping("/{userId}/items/{cartItemId}")
-    public Cart updateItem(@PathVariable Long userId,
-                            @PathVariable Long cartItemId,
-                            @RequestParam Integer quantity) {
-        return cartService.updateItemQuantity(userId, cartItemId, quantity);
+    public ResponseEntity<ApiResponse<CartResponseDto>> updateItem(@PathVariable Long userId,
+                                                                    @PathVariable Long cartItemId,
+                                                                    @RequestParam Integer quantity) {
+        CartResponseDto cart = cartService.updateItemQuantity(userId, cartItemId, quantity);
+        return ResponseEntity.ok(ApiResponse.success("Sepet güncellendi", cart));
     }
 
     @DeleteMapping("/{userId}/items/{cartItemId}")
-    public void removeItem(@PathVariable Long userId, @PathVariable Long cartItemId) {
+    public ResponseEntity<ApiResponse<Void>> removeItem(@PathVariable Long userId,
+                                                         @PathVariable Long cartItemId) {
         cartService.removeItemFromCart(userId, cartItemId);
+        return ResponseEntity.ok(ApiResponse.success("Ürün sepetten çıkarıldı", null));
     }
 
     @DeleteMapping("/{userId}/clear")
-    public void clearCart(@PathVariable Long userId) {
+    public ResponseEntity<ApiResponse<Void>> clearCart(@PathVariable Long userId) {
         cartService.clearCart(userId);
+        return ResponseEntity.ok(ApiResponse.success("Sepet temizlendi", null));
     }
 
     @GetMapping("/{userId}/total")
-    public Double getTotal(@PathVariable Long userId) {
-        return cartService.calculateCartTotal(userId);
+    public ResponseEntity<ApiResponse<Double>> getTotal(@PathVariable Long userId) {
+        Double total = cartService.calculateCartTotal(userId);
+        return ResponseEntity.ok(ApiResponse.success("Sepet toplamı hesaplandı", total));
     }
 }

@@ -7,6 +7,8 @@ import com.example.demo.entitiy.CartItem;
 import com.example.demo.entitiy.Orders;
 import com.example.demo.entitiy.Payment;
 import com.example.demo.entitiy.Product;
+import com.example.demo.exception.InvalidRequestException;
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.repos.CartItemRepository;
 import com.example.demo.repos.CartRepository;
 import com.example.demo.repos.OrdersRepostory;
@@ -97,18 +99,33 @@ public class OrderService {
     @Transactional
     public Payment processFakePayment(Long paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new RuntimeException("Ödeme bulunamadı"));
+                .orElseThrow(() -> new ResourceNotFoundException("Ödeme bulunamadı"));
 
         if (Boolean.TRUE.equals(payment.getStatus())) {
-            throw new RuntimeException("Bu ödeme zaten işlenmiş");
+            throw new InvalidRequestException("Bu ödeme zaten işlenmiş");
         }
 
-        payment.setStatus(true);
-
+        // Her sipariş satırı için stoku düş
         for (Orders order : payment.getOrders()) {
+
+            Product product = order.getProduct();
+
+            // Stok yeterli mi kontrol et
+            if (product.getStock() < order.getQuantity()) {
+                throw new InvalidRequestException(
+                    "Yetersiz stok: " + product.getName() +
+                    " (mevcut: " + product.getStock() + ")"
+                );
+            }
+
+            // Stoktan düş
+            product.setStock(product.getStock() - order.getQuantity());
+            productRepository.save(product);
+
             order.setOrderStatus(true);
         }
 
+        payment.setStatus(true);
         return paymentRepository.save(payment);
     }
-}
+    }

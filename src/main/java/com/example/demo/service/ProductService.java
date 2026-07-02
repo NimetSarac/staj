@@ -11,6 +11,8 @@ import com.example.demo.entitiy.Product;
 import com.example.demo.dto.ProductRequestDto;
 import com.example.demo.dto.ProductResponseDto;
 import com.example.demo.dto.ProductMapper;
+import com.example.demo.exception.InvalidRequestException;
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.repos.CategoryRepostory;
 import com.example.demo.repos.ProductRepostory;
 
@@ -23,7 +25,6 @@ public class ProductService {
     @Autowired
     private CategoryRepostory categoryRepository;
 
-
     public List<ProductResponseDto> getAllProducts() {
         return productRepository.findAll()
                 .stream()
@@ -33,11 +34,18 @@ public class ProductService {
 
     public Product getProductById(Long id) {
         return productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Ürün bulunamadı: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Ürün bulunamadı: " + id));
     }
 
     public List<ProductResponseDto> getProductsByCategory(Long categoryId) {
-        return productRepository.findByCategoryId(categoryId)
+
+        // Kategori var mı doğrula
+        categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "Kategori bulunamadı: " + categoryId
+                ));
+
+        return productRepository.findByCategory_Id(categoryId)
                 .stream()
                 .map(ProductMapper::toResponseDto)
                 .collect(Collectors.toList());
@@ -50,10 +58,23 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
-    // DTO kullanan yeni create metodu
     public Product create(ProductRequestDto dto) {
         Category category = categoryRepository.findById(dto.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Kategori bulunamadı: " + dto.getCategoryId()));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "Kategori bulunamadı: " + dto.getCategoryId()
+                ));
+
+        // Aynı isimde ürün var mı kontrol et
+        boolean isimZatenVar = productRepository
+                .findByNameContainingIgnoreCase(dto.getName())
+                .stream()
+                .anyMatch(p -> p.getName().equalsIgnoreCase(dto.getName()));
+
+        if (isimZatenVar) {
+            throw new InvalidRequestException(
+                "Bu isimde bir ürün zaten mevcut: " + dto.getName()
+            );
+        }
 
         Product product = ProductMapper.toEntity(dto);
         product.setCategory(category);
@@ -61,7 +82,6 @@ public class ProductService {
         return productRepository.save(product);
     }
 
-    // Admin işlemi: ürün güncelleme
     public Product updateProduct(Long id, Product updatedData) {
         Product existing = getProductById(id);
         existing.setName(updatedData.getName());
@@ -74,6 +94,15 @@ public class ProductService {
     }
 
     public void deleteProduct(Long id) {
+        getProductById(id);
         productRepository.deleteById(id);
+    }
+
+    // Sadece aktif ürünleri listele
+    public List<ProductResponseDto> getActiveProducts() {
+        return productRepository.findByStatus(true)
+                .stream()
+                .map(ProductMapper::toResponseDto)
+                .collect(Collectors.toList());
     }
 }

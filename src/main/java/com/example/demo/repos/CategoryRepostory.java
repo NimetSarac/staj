@@ -7,7 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.example.demo.entitiy.Category;
 
 public interface CategoryRepostory extends JpaRepository<Category, Long> {
-
+    
+	  // İsme göre kategori bul
     Optional<Category> findByName(String name);
 
     boolean existsByName(String name);

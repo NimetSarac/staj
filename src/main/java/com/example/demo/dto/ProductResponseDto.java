@@ -19,6 +19,5 @@ public class ProductResponseDto {
 	private Double price;
 	private Double discount;
 	private Boolean status;
-	private Long categoryId;
-	private String categoryName;
+    private CategorySummaryDto category;
 }

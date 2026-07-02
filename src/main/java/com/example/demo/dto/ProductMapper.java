@@ -5,16 +5,14 @@ import com.example.demo.entitiy.Product;
 public class ProductMapper {
 
     public static ProductResponseDto toResponseDto(Product product) {
-        if (product == null) {
-            return null;
-        }
+        if (product == null) return null;
 
-        Long categoryId = null;
-        String categoryName = null;
-
+        CategorySummaryDto categoryDto = null;
         if (product.getCategory() != null) {
-            categoryId = product.getCategory().getId();
-            categoryName = product.getCategory().getName();
+            categoryDto = new CategorySummaryDto(
+                    product.getCategory().getId(),
+                    product.getCategory().getName()
+            );
         }
 
         return new ProductResponseDto(
@@ -25,15 +23,12 @@ public class ProductMapper {
                 product.getPrice(),
                 product.getDiscount(),
                 product.getStatus(),
-                categoryId,
-                categoryName
+                categoryDto
         );
     }
 
     public static Product toEntity(ProductRequestDto dto) {
-        if (dto == null) {
-            return null;
-        }
+        if (dto == null) return null;
 
         Product product = new Product();
         product.setName(dto.getName());

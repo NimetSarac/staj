@@ -5,6 +5,8 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.example.demo.dto.CartMapper;
+import com.example.demo.dto.CartResponseDto;
 import com.example.demo.entitiy.Cart;
 import com.example.demo.entitiy.CartItem;
 import com.example.demo.entitiy.Product;
@@ -31,7 +33,14 @@ public class CartService {
     @Autowired
     private UsersRepository usersRepository;
 
-    public Cart getCartByUserId(Long userId) {
+    // Dışarıya CartResponseDto döndürür (Controller için)
+    public CartResponseDto getCartByUserId(Long userId) {
+        Cart cart = getCartEntityByUserId(userId);
+        return CartMapper.toResponseDto(cart);
+    }
+
+    // İç kullanım için Cart entity döndürür
+    private Cart getCartEntityByUserId(Long userId) {
         return cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Sepet bulunamadı"));
     }
@@ -51,13 +60,17 @@ public class CartService {
         return cartRepository.save(newCart);
     }
 
-    public Cart addItemToCart(Long userId, Long productId, Integer quantity) {
+    public CartResponseDto addItemToCart(Long userId, Long productId, Integer quantity) {
+
+        if (quantity == null || quantity <= 0) {
+            throw new InvalidRequestException("Ürün miktarı 0'dan büyük olmalıdır");
+        }
+
         Cart cart = getOrCreateCart(userId);
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Ürün bulunamadı: " + productId));
 
-        // RuntimeException → InvalidRequestException
         if (product.getStock() < quantity) {
             throw new InvalidRequestException("Yetersiz stok. Mevcut stok: " + product.getStock());
         }
@@ -69,9 +82,11 @@ public class CartService {
             CartItem item = existingItem.get();
             int newQuantity = item.getQuantity() + quantity;
 
-            // RuntimeException → InvalidRequestException
             if (product.getStock() < newQuantity) {
-                throw new InvalidRequestException("Yetersiz stok. Mevcut stok: " + product.getStock());
+                throw new InvalidRequestException(
+                    "Yetersiz stok. Sepette zaten " + item.getQuantity() +
+                    " adet var, mevcut stok: " + product.getStock()
+                );
             }
 
             item.setQuantity(newQuantity);
@@ -84,20 +99,24 @@ public class CartService {
             cartItemRepository.save(newItem);
         }
 
-        return getOrCreateCart(userId);
+        return CartMapper.toResponseDto(getOrCreateCart(userId));
     }
 
-    public Cart updateItemQuantity(Long userId, Long cartItemId, Integer newQuantity) {
-        getCartByUserId(userId);
+    public CartResponseDto updateItemQuantity(Long userId, Long cartItemId, Integer newQuantity) {
+        getCartEntityByUserId(userId); // sepetin var olduğunu doğrula
         CartItem item = cartItemRepository.findById(cartItemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Sepet ürünü bulunamadı"));
 
-        if (newQuantity <= 0) {
+        if (newQuantity == null || newQuantity < 0) {
+            throw new InvalidRequestException("Miktar 0 veya daha büyük olmalıdır");
+        }
+
+        if (newQuantity == 0) {
             cartItemRepository.delete(item);
         } else {
-            // RuntimeException → InvalidRequestException
             if (item.getProduct().getStock() < newQuantity) {
-                throw new InvalidRequestException("Yetersiz stok");
+                throw new InvalidRequestException("Yetersiz stok. Mevcut stok: " +
+                    item.getProduct().getStock());
             }
             item.setQuantity(newQuantity);
             cartItemRepository.save(item);
@@ -111,12 +130,12 @@ public class CartService {
     }
 
     public void clearCart(Long userId) {
-        Cart cart = getCartByUserId(userId);
+        Cart cart = getCartEntityByUserId(userId); // entity lazım
         cartItemRepository.deleteByCartId(cart.getId());
     }
 
     public Double calculateCartTotal(Long userId) {
-        Cart cart = getCartByUserId(userId);
+        Cart cart = getCartEntityByUserId(userId); // entity lazım
         return cart.getCartItems().stream()
                 .mapToDouble(CartItem::getSubtotal)
                 .sum();

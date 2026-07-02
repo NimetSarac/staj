@@ -2,11 +2,13 @@ package com.example.demo.controller;
 
 import java.util.List;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.demo.entitiy.Product;
 import com.example.demo.dto.ProductRequestDto;
 import com.example.demo.dto.ProductResponseDto;
+import com.example.demo.dto.ApiResponse;
 import com.example.demo.dto.ProductMapper;
 import com.example.demo.service.ProductService;
 
@@ -41,6 +43,11 @@ public class ProductController {
         return productService.searchProducts(keyword);
     }
 
+    @GetMapping("/active")
+    public ResponseEntity<ApiResponse<List<ProductResponseDto>>> getActiveProducts() {
+        List<ProductResponseDto> products = productService.getActiveProducts();
+        return ResponseEntity.ok(ApiResponse.success("Aktif ürünler listelendi", products));
+    }
     @PostMapping
     public ProductResponseDto create(@RequestBody ProductRequestDto dto) {
         Product saved = productService.create(dto);
@@ -57,4 +64,5 @@ public class ProductController {
     public void delete(@PathVariable Long id) {
         productService.deleteProduct(id);
     }
+    
 }
