@@ -48,6 +48,7 @@ public class ProductController {
         List<ProductResponseDto> products = productService.getActiveProducts();
         return ResponseEntity.ok(ApiResponse.success("Aktif ürünler listelendi", products));
     }
+    
     @PostMapping
     public ProductResponseDto create(@RequestBody ProductRequestDto dto) {
         Product saved = productService.create(dto);
