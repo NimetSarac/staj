@@ -4,13 +4,16 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import com.example.demo.entitiy.Category;
-import com.example.demo.entitiy.Product;
+import com.example.demo.dto.PageResponse;
+import com.example.demo.dto.ProductMapper;
 import com.example.demo.dto.ProductRequestDto;
 import com.example.demo.dto.ProductResponseDto;
-import com.example.demo.dto.ProductMapper;
+import com.example.demo.entitiy.Category;
+import com.example.demo.entitiy.Product;
 import com.example.demo.exception.InvalidRequestException;
 import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.repos.CategoryRepostory;
@@ -31,7 +34,29 @@ public class ProductService {
                 .map(ProductMapper::toResponseDto)
                 .collect(Collectors.toList());
     }
+    public PageResponse<ProductResponseDto> getAllProductsPaged(Pageable pageable) {
 
+        // 1. Veritabanından sayfalı veri çek
+        Page<Product> page = productRepository.findAll(pageable);
+
+        // 2. Her Product'ı ProductResponseDto'ya çevir
+        List<ProductResponseDto> content = page.getContent()
+                .stream()
+                .map(ProductMapper::toResponseDto)
+                .collect(Collectors.toList());
+
+        // 3. PageResponse oluştur ve döndür
+        return new PageResponse<>(
+                content,
+                page.getNumber(),         // currentPage
+                page.getTotalPages(),     // totalPages
+                page.getTotalElements(),  // totalElements
+                page.getSize(),           // pageSize
+                page.isFirst(),           // isFirst
+                page.isLast()             // isLast
+        );
+    }
+    
     public Product getProductById(Long id) {
         return productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Ürün bulunamadı: " + id));
@@ -98,7 +123,7 @@ public class ProductService {
         productRepository.deleteById(id);
     }
 
-    // Sadece aktif ürünleri listele
+    // Sadece aktif ü rünleri listele
     public List<ProductResponseDto> getActiveProducts() {
         return productRepository.findByStatus(true)
                 .stream()
