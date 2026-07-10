@@ -53,17 +53,16 @@ public class UserService {
         return savedUser;
     }
 
-    public Users login(String username, String rawPassword) {
-        Users user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+	public Users login(String email, String rawPassword) {
+	    Users user = userRepository.findByEmail(email)
+	            .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
 
-        if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
-            throw new RuntimeException("Şifre yanlış");
-        }
+	    if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
+	        throw new RuntimeException("Şifre yanlış");
+	    }
 
-        return user;
-    }
-
+	    return user;
+	}
     public Users findByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));

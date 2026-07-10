@@ -1,9 +1,14 @@
 package com.example.demo.controller;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.demo.dto.ApiResponse;
+import com.example.demo.dto.OrderRequestDto;
 import com.example.demo.entitiy.Payment;
 import com.example.demo.service.OrderService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -17,10 +22,14 @@ public class OrderController {
 
     // Sepetten sipariş oluştur - tek bir Payment, içinde birden fazla Orders
     @PostMapping("/checkout")
-    public Payment checkout(@RequestParam Long userId,
-                             @RequestParam String fullname,
-                             @RequestParam String bankName) {
-        return orderService.createOrderFromCart(userId, fullname, bankName);
+    public ResponseEntity<ApiResponse<Payment>> checkout(
+            @Valid @RequestBody OrderRequestDto dto) {
+        Payment payment = orderService.createOrderFromCart(
+                dto.getUserId(),
+                dto.getFullname(),
+                dto.getBankName()
+        );
+        return ResponseEntity.ok(ApiResponse.success("Sipariş oluşturuldu", payment));
     }
 
     // Sahte ödeme işlemini tetikle
