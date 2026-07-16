@@ -12,12 +12,13 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class ProductResponseDto {
 
-	private Long id;
-	private String name;
-	private String image;
-	private Integer stock;
-	private Double price;
-	private Double discount;
-	private Boolean status;
-    private CategorySummaryDto category;
-}
+	 private Long id;
+	    private String name;
+	    private String image;
+	    private Integer stock;
+	    private Double price;
+	    private Double discount;
+	    private Boolean status;
+	    private String description;
+	    private CategorySummaryDto category;
+	}

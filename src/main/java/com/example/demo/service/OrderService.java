@@ -108,24 +108,8 @@ public class OrderService {
         // Her sipariş satırı için stoku düş
         for (Orders order : payment.getOrders()) {
 
-            Product product = order.getProduct();
+       order.setOrderStatus(true);       }
 
-            // Stok yeterli mi kontrol et
-            if (product.getStock() < order.getQuantity()) {
-                throw new InvalidRequestException(
-                    "Yetersiz stok: " + product.getName() +
-                    " (mevcut: " + product.getStock() + ")"
-                );
-            }
-
-            // Stoktan düş
-            product.setStock(product.getStock() - order.getQuantity());
-            productRepository.save(product);
-
-            order.setOrderStatus(true);
-        }
-
-        payment.setStatus(true);
         return paymentRepository.save(payment);
     }
-    }
+}

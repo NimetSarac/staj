@@ -13,7 +13,7 @@ public interface ProductRepostory extends JpaRepository<Product, Long> {
     // Kategoriye göre ürünleri listele (alt çizgi ile ilişkili nesnenin alanına erişim)
     List<Product> findByCategory_Id(Long categoryId);
 
-    // ESKİ — bunu sil veya yorum satırına al:
+    //
     // List<Product> findByCategoryId(Long categoryId);
 
     // İsme göre arama
@@ -27,4 +27,8 @@ public interface ProductRepostory extends JpaRepository<Product, Long> {
 
     // Kategoriye göre aktif ürünler
     List<Product> findByCategory_IdAndStatus(Long categoryId, Boolean status);
+
+    List<Product> findByPriceBetween(Double minPrice, Double maxPrice);
+    List<Product> findByCategory_IdAndPriceBetween(Long categoryId, Double minPrice, Double maxPrice);
+    
 }

@@ -130,4 +130,25 @@ public class ProductService {
                 .map(ProductMapper::toResponseDto)
                 .collect(Collectors.toList());
     }
+    public List<ProductResponseDto> getProductsByPriceRange(Double minPrice, Double maxPrice) {
+        return productRepository.findByPriceBetween(minPrice, maxPrice)
+                .stream()
+                .map(ProductMapper::toResponseDto)
+                .collect(Collectors.toList());
+}
+    public List<ProductResponseDto> filterProducts(Double minPrice, Double maxPrice, Long categoryId) {
+        List<Product> products;
+
+        if (categoryId != null && minPrice != null && maxPrice != null) {
+            products = productRepository.findByCategory_IdAndPriceBetween(categoryId, minPrice, maxPrice);
+        } else if (minPrice != null && maxPrice != null) {
+            products = productRepository.findByPriceBetween(minPrice, maxPrice);
+        } else {
+            products = productRepository.findAll();
+        }
+
+        return products.stream()
+                .map(ProductMapper::toResponseDto)
+                .collect(Collectors.toList());
+    }
 }
