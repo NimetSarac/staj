@@ -12,6 +12,7 @@ import com.example.demo.dto.ApiResponse;
 import com.example.demo.dto.LoginResponseDto;
 import com.example.demo.entitiy.Users;
 import com.example.demo.service.JwtService;
+import com.example.demo.service.PasswordResetService;
 import com.example.demo.service.UserService;
 
 @RestController
@@ -33,6 +34,9 @@ public class AuthController {
 
 	@Autowired
 	private JwtService jwtService;
+	@Autowired
+	private PasswordResetService passwordResetService;
+
 
 	@PostMapping("/login")
 	public ResponseEntity<ApiResponse<LoginResponseDto>> login(
@@ -90,6 +94,34 @@ public class AuthController {
 		Long userId = (Long) session.getAttribute("userId");
 		Users user = userService.findById(userId);
 		return ResponseEntity.ok(ApiResponse.success("Kullanıcı bilgisi", user));
+	}
+	
+	// Şifre sıfırlama isteği
+	@PostMapping("/forgot-password")
+	public ResponseEntity<ApiResponse<Void>> forgotPassword(@RequestParam String email) {
+	    passwordResetService.requestPasswordReset(email);
+	    return ResponseEntity.ok(ApiResponse.success(
+	        "Şifre sıfırlama kodu e-posta adresinize gönderildi.", null
+	    ));
+	}
+
+	// Kodu doğrula
+	@PostMapping("/verify-reset-code")
+	public ResponseEntity<ApiResponse<Boolean>> verifyResetCode(
+	        @RequestParam String email,
+	        @RequestParam String token) {
+	    boolean valid = passwordResetService.verifyToken(email, token);
+	    return ResponseEntity.ok(ApiResponse.success("Kod doğrulandı", valid));
+	}
+
+	// Yeni şifre belirle
+	@PostMapping("/reset-password")
+	public ResponseEntity<ApiResponse<Void>> resetPassword(
+	        @RequestParam String email,
+	        @RequestParam String token,
+	        @RequestParam String newPassword) {
+	    passwordResetService.resetPassword(email, token, newPassword);
+	    return ResponseEntity.ok(ApiResponse.success("Şifreniz başarıyla güncellendi.", null));
 	}
 
 }
