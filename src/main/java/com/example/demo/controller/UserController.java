@@ -62,10 +62,9 @@ public class UserController {
 		userService.changePassword(id, currentPassword, newPassword);
 		return ResponseEntity.ok(ApiResponse.success("Şifre başarıyla değiştirildi", null));
 	}
-
 	@DeleteMapping("/{id}")
 	public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
-		userRepository.deleteById(id);
-		return ResponseEntity.ok(ApiResponse.success("Kullanıcı silindi", null));
+	    userService.deleteUser(id);
+	    return ResponseEntity.ok(ApiResponse.success("Kullanıcı silindi", null));
 	}
 }

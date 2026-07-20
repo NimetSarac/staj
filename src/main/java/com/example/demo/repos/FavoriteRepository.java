@@ -8,6 +8,8 @@ import org.springframework.stereotype.Repository;
 
 import com.example.demo.entitiy.Favorite;
 
+import jakarta.transaction.Transactional;
+
 @Repository
 public interface FavoriteRepository extends JpaRepository<Favorite, Long> {
 
@@ -18,4 +20,7 @@ public interface FavoriteRepository extends JpaRepository<Favorite, Long> {
     boolean existsByUserIdAndProductId(Long userId, Long productId);
 
     void deleteByUserIdAndProductId(Long userId, Long productId);
+
+    @Transactional
+    void deleteByUserId(Long userId);
 }

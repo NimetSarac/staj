@@ -4,8 +4,12 @@ import com.example.demo.entitiy.Cart;
 import com.example.demo.entitiy.Users;
 import com.example.demo.exception.InvalidRequestException;
 import com.example.demo.exception.ResourceNotFoundException;
+import com.example.demo.repos.CartItemRepository;
 import com.example.demo.repos.CartRepository;
+import com.example.demo.repos.FavoriteRepository;
 import com.example.demo.repos.UsersRepository;
+
+import jakarta.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,6 +26,12 @@ public class UserService {
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
+
+	@Autowired
+	private CartItemRepository cartItemRepository;
+
+	@Autowired
+	private FavoriteRepository favoriteRepository;
 
 	public UserService(UsersRepository userRepository, CartRepository cartRepository, PasswordEncoder passwordEncoder) {
 		super();
@@ -44,7 +54,7 @@ public class UserService {
 		user.setEmail(email);
 		user.setPassword(passwordEncoder.encode(rawPassword));
 		user.setStatus(true);
-		user.setRole("CUSTOMER");  
+		user.setRole("CUSTOMER");
 		Users savedUser = userRepository.save(user);
 
 		// Kullanıcı oluşturulunca otomatik olarak boş bir sepet de oluşturuyoruz
@@ -90,5 +100,20 @@ public class UserService {
 		// Yeni şifreyi hashle ve kaydet
 		user.setPassword(passwordEncoder.encode(newPassword));
 		userRepository.save(user);
+	}
+
+	@Transactional
+	public void deleteUser(Long userId) {
+		// 1. Favori kayıtlarını sil
+		favoriteRepository.deleteByUserId(userId);
+
+		// 2. Sepet ürünlerini sil
+		cartRepository.findByUserId(userId).ifPresent(cart -> {
+			cartItemRepository.deleteByCartId(cart.getId());
+			cartRepository.delete(cart);
+		});
+
+		// 3. Kullanıcıyı sil
+		userRepository.deleteById(userId);
 	}
 }
