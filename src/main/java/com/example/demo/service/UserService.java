@@ -11,6 +11,8 @@ import com.example.demo.repos.UsersRepository;
 
 import jakarta.transaction.Transactional;
 
+import java.time.LocalDateTime;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -32,6 +34,9 @@ public class UserService {
 
 	@Autowired
 	private FavoriteRepository favoriteRepository;
+	
+	@Autowired
+	private EmailService emailService;
 
 	public UserService(UsersRepository userRepository, CartRepository cartRepository, PasswordEncoder passwordEncoder) {
 		super();
@@ -40,39 +45,57 @@ public class UserService {
 		this.passwordEncoder = passwordEncoder;
 	}
 
+	
+
 	public Users register(String username, String email, String rawPassword) {
 
-		if (userRepository.existsByUsername(username)) {
-			throw new RuntimeException("Bu kullanıcı adı zaten kullanılıyor");
-		}
-		if (userRepository.existsByEmail(email)) {
-			throw new RuntimeException("Bu e-posta zaten kayıtlı");
-		}
+	    if (userRepository.existsByUsername(username)) {
+	        throw new InvalidRequestException("Bu kullanıcı adı zaten kullanılıyor");
+	    }
+	    if (userRepository.existsByEmail(email)) {
+	        throw new InvalidRequestException("Bu e-posta zaten kayıtlı");
+	    }
 
-		Users user = new Users();
-		user.setUsername(username);
-		user.setEmail(email);
-		user.setPassword(passwordEncoder.encode(rawPassword));
-		user.setStatus(true);
-		user.setRole("CUSTOMER");
-		Users savedUser = userRepository.save(user);
+	    // 6 haneli doğrulama kodu üret
+	    String verificationCode = String.format("%06d", (int)(Math.random() * 1000000));
 
-		// Kullanıcı oluşturulunca otomatik olarak boş bir sepet de oluşturuyoruz
-		Cart cart = new Cart();
-		cart.setUser(savedUser);
-		cartRepository.save(cart);
+	    Users user = new Users();
+	    user.setUsername(username);
+	    user.setEmail(email);
+	    user.setPassword(passwordEncoder.encode(rawPassword));
+	    user.setStatus(true);
+	    user.setRole("CUSTOMER");
+	    user.setEmailVerified(false); // Henüz doğrulanmamış
+	    user.setVerificationCode(verificationCode);
+	    user.setVerificationCodeExpiry(LocalDateTime.now().plusMinutes(15));
 
-		return savedUser;
+	    Users savedUser = userRepository.save(user);
+
+	    // Boş sepet oluştur
+	    Cart cart = new Cart();
+	    cart.setUser(savedUser);
+	    cartRepository.save(cart);
+
+	    // Doğrulama maili gönder
+	    emailService.sendVerificationEmail(email, verificationCode);
+
+	    return savedUser;
 	}
 
 	public Users login(String email, String rawPassword) {
-		Users user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+	    Users user = userRepository.findByEmail(email)
+	            .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
 
-		if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
-			throw new RuntimeException("Şifre yanlış");
-		}
+	    if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
+	        throw new RuntimeException("Şifre yanlış");
+	    }
 
-		return user;
+	    // E-posta doğrulanmamışsa giriş yapılamaz
+	    if (!user.isEmailVerified()) {
+	        throw new InvalidRequestException("E-posta adresiniz doğrulanmamış. Lütfen e-postanızı kontrol edin.");
+	    }
+
+	    return user;
 	}
 
 	public Users findByUsername(String username) {
@@ -116,4 +139,47 @@ public class UserService {
 		// 3. Kullanıcıyı sil
 		userRepository.deleteById(userId);
 	}
+	@Transactional
+	public void verifyEmail(String email, String code) {
+	    Users user = userRepository.findByEmail(email)
+	            .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı"));
+
+	    if (user.isEmailVerified()) {
+	        throw new InvalidRequestException("E-posta zaten doğrulanmış");
+	    }
+
+	    if (user.getVerificationCode() == null || !user.getVerificationCode().equals(code)) {
+	        throw new InvalidRequestException("Geçersiz doğrulama kodu");
+	    }
+
+	    if (LocalDateTime.now().isAfter(user.getVerificationCodeExpiry())) {
+	        throw new InvalidRequestException("Doğrulama kodunun süresi dolmuş");
+	    }
+
+	    user.setEmailVerified(true);
+	    user.setVerificationCode(null);
+	    user.setVerificationCodeExpiry(null);
+	    userRepository.save(user);
+	}
+
+	// Kodu yeniden gönder
+	@Transactional
+	public void resendVerificationCode(String email) {
+	    Users user = userRepository.findByEmail(email)
+	            .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı"));
+
+	    if (user.isEmailVerified()) {
+	        throw new InvalidRequestException("E-posta zaten doğrulanmış");
+	    }
+
+	    String code = String.format("%06d", (int)(Math.random() * 1000000));
+	    user.setVerificationCode(code);
+	    user.setVerificationCodeExpiry(LocalDateTime.now().plusMinutes(15));
+	    userRepository.save(user);
+
+	    emailService.sendVerificationEmail(email, code);
+	}
+
+
+
 }

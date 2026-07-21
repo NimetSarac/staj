@@ -30,4 +30,17 @@ public class EmailService {
         );
         mailSender.send(message);
     }
+    public void sendVerificationEmail(String toEmail, String code) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(toEmail);
+        message.setSubject("E-posta Doğrulama");
+        message.setText(
+            "Merhaba,\n\n" +
+            "Hesabınızı doğrulamak için kodunuz: " + code + "\n\n" +
+            "Bu kod 15 dakika geçerlidir.\n\n" +
+            "E-Ticaret Sistemi"
+        );
+        mailSender.send(message);
+    }
 }

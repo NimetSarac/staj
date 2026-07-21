@@ -123,5 +123,21 @@ public class AuthController {
 	    passwordResetService.resetPassword(email, token, newPassword);
 	    return ResponseEntity.ok(ApiResponse.success("Şifreniz başarıyla güncellendi.", null));
 	}
+	
+	// E-posta doğrula
+	@PostMapping("/verify-email")
+	public ResponseEntity<ApiResponse<Void>> verifyEmail(
+	        @RequestParam String email,
+	        @RequestParam String code) {
+	    userService.verifyEmail(email, code);
+	    return ResponseEntity.ok(ApiResponse.success("E-posta başarıyla doğrulandı", null));
+	}
+
+	// Kodu yeniden gönder
+	@PostMapping("/resend-verification")
+	public ResponseEntity<ApiResponse<Void>> resendVerification(@RequestParam String email) {
+	    userService.resendVerificationCode(email);
+	    return ResponseEntity.ok(ApiResponse.success("Doğrulama kodu yeniden gönderildi", null));
+	}
 
 }

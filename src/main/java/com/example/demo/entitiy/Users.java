@@ -34,6 +34,9 @@ public class Users {
 
 	private String role;
 	private String address;
+	private boolean emailVerified = false;
+	private String verificationCode;
+	private java.time.LocalDateTime verificationCodeExpiry;
 
 	@OneToMany(mappedBy = "user")
 	@JsonIgnore
