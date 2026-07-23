@@ -24,7 +24,6 @@ public class Product {
 	private Long id;
 
 	private String name;
-
 	@Column(columnDefinition = "TEXT")
 	private String image;
 

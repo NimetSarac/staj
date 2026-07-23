@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.example.demo.entitiy.CartItem;
 
+import jakarta.transaction.Transactional;
+
 public interface CartItemRepository extends JpaRepository<CartItem, Long> {
 
     List<CartItem> findByCartId(Long cartId);
@@ -15,4 +17,6 @@ public interface CartItemRepository extends JpaRepository<CartItem, Long> {
     Optional<CartItem> findByCartIdAndProductId(Long cartId, Long productId);
 
     void deleteByCartId(Long cartId);
+    @Transactional
+    void deleteByProductId(Long productId);
 }

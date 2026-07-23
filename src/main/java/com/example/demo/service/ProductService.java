@@ -16,14 +16,26 @@ import com.example.demo.entitiy.Category;
 import com.example.demo.entitiy.Product;
 import com.example.demo.exception.InvalidRequestException;
 import com.example.demo.exception.ResourceNotFoundException;
+import com.example.demo.repos.CartItemRepository;
 import com.example.demo.repos.CategoryRepostory;
+import com.example.demo.repos.ProductImageRepository;
 import com.example.demo.repos.ProductRepostory;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class ProductService {
 
     @Autowired
     private ProductRepostory productRepository;
+    
+
+    @Autowired
+    private ProductImageRepository productImageRepository;
+    
+
+    @Autowired
+    private CartItemRepository cartItemRepository;
 
     @Autowired
     private CategoryRepostory categoryRepository;
@@ -118,8 +130,11 @@ public class ProductService {
         return productRepository.save(existing);
     }
 
+    @Transactional
     public void deleteProduct(Long id) {
         getProductById(id);
+        productImageRepository.deleteByProductId(id);
+        cartItemRepository.deleteByProductId(id);
         productRepository.deleteById(id);
     }
 
@@ -151,4 +166,5 @@ public class ProductService {
                 .map(ProductMapper::toResponseDto)
                 .collect(Collectors.toList());
     }
+    
 }
