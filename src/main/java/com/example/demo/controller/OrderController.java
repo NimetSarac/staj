@@ -60,4 +60,21 @@ public class OrderController {
         orderrRepository.save(order);
         return ResponseEntity.ok(ApiResponse.success("Sipariş durumu güncellendi", order));
     }
+    @PutMapping("/{orderId}/cargo")
+    public ResponseEntity<ApiResponse<Orders>> updateCargoStatus(
+            @PathVariable Long orderId,
+            @RequestParam String cargoStatus,
+            @RequestParam(required = false) String cargoTrackingNumber,
+            @RequestParam(required = false) String cargoCompany) {
+
+        Orders order = orderrRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sipariş bulunamadı"));
+
+        order.setCargoStatus(cargoStatus);
+        if (cargoTrackingNumber != null) order.setCargoTrackingNumber(cargoTrackingNumber);
+        if (cargoCompany != null) order.setCargoCompany(cargoCompany);
+
+        orderrRepository.save(order);
+        return ResponseEntity.ok(ApiResponse.success("Kargo durumu güncellendi", order));
+    }
 }

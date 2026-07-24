@@ -46,6 +46,11 @@ public class Orders {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private Users user;
+    
+    
+    private String cargoStatus; // HAZIRLANIYOR, KARGOYA_VERILDI, DAGITIMDA, TESLIM_EDILDI
+    private String cargoTrackingNumber;
+    private String cargoCompany;
 
     public Orders() {
     }
